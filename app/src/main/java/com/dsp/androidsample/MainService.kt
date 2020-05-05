@@ -3,11 +3,14 @@ package com.dsp.androidsample
 import android.app.Service
 import android.content.Intent
 import android.graphics.PixelFormat
+import android.os.Build
 import android.os.IBinder
 import android.view.*
 import android.view.View.OnTouchListener
+import android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+import android.view.WindowManager.LayoutParams.TYPE_PHONE
 import android.widget.ImageView
-import android.widget.RelativeLayout
+import androidx.constraintlayout.widget.ConstraintLayout
 import com.dsp.androidsample.Logger.d
 
 class MainService : Service() {
@@ -33,10 +36,15 @@ class MainService : Service() {
     }
 
     private fun initWidget() {
+        fun layoutParamType(): Int {
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                TYPE_APPLICATION_OVERLAY
+            else TYPE_PHONE
+        }
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.TYPE_PHONE,
+            layoutParamType(),
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             PixelFormat.TRANSLUCENT
         )
@@ -44,7 +52,7 @@ class MainService : Service() {
         params.x = position.first
         params.y = position.second
         floatingWidget = LayoutInflater.from(this).inflate(R.layout.floating_widget, null)
-        floatingWidget?.findViewById<RelativeLayout>(R.id.relativeLayout_container)
+        floatingWidget?.findViewById<ConstraintLayout>(R.id.constraintLayout_container)
             ?.setOnTouchListener(object : OnTouchListener {
                 private var initialX = 0
                 private var initialY = 0
@@ -82,8 +90,10 @@ class MainService : Service() {
                     return false
                 }
             })
-        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-        windowManager.addView(floatingWidget, params)
+        floatingWidget?.let {
+            windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+            windowManager.addView(floatingWidget, params)
+        }
     }
 
     override fun onDestroy() {
