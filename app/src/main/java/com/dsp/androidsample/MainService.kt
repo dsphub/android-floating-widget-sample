@@ -1,7 +1,9 @@
 package com.dsp.androidsample
 
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.content.Intent.*
 import android.graphics.PixelFormat
 import android.os.IBinder
 import android.view.*
@@ -65,10 +67,7 @@ class MainService : Service() {
                             if (xDiff < 10 && yDiff < 10) {
                                 d { "onTouch up" }
                                 v?.performClick()
-                                Intent(this@MainService, MainActivity::class.java)
-                                    .also {
-                                        startActivity(it)
-                                    }
+                                moveAppToForeground()
                             }
                             return true
                         }
@@ -84,6 +83,48 @@ class MainService : Service() {
             })
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         windowManager.addView(floatingWidget, params)
+    }
+
+    /**
+     * Does not allow Services or BroadcastReceivers to launch activities for up to 5 seconds
+     * after home button is pressed. No easy way to overcome this.
+     */
+    private fun moveAppToForeground() {
+        Intent(this@MainService, MainActivity::class.java)
+            .also { startActivity(it) }
+    }
+
+    /**
+     * Does not allow Services or BroadcastReceivers to launch activities for up to 5 seconds
+     * after home button is pressed. No easy way to overcome this.
+     */
+    private fun moveAppToForeground1() {
+        Intent().apply {
+            setClass(this@MainService, MainActivity::class.java)
+            flags =
+                FLAG_ACTIVITY_NEW_TASK or FLAG_ACTIVITY_SINGLE_TOP or FLAG_FROM_BACKGROUND
+            action = ACTION_MAIN
+            addCategory(CATEGORY_LAUNCHER)
+        }.also { startActivity(it) }
+    }
+
+    /**
+     * Does not allow Services or BroadcastReceivers to launch activities for up to 5 seconds
+     * after home button is pressed. No easy way to overcome this.
+     */
+    private fun moveAppToForeground2() {
+        try {
+            Intent(this@MainService, MainActivity::class.java)
+                .apply {
+                    flags = FLAG_ACTIVITY_NEW_TASK
+                }.also {
+                    PendingIntent
+                        .getActivity(this.applicationContext, 0, it, 0)
+                        .send()
+                }
+        } catch (e: PendingIntent.CanceledException) {
+            e.printStackTrace()
+        }
     }
 
     override fun onDestroy() {
